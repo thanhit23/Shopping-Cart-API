@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component } from 'react';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
 import { findIndex } from 'lodash';
@@ -9,85 +9,76 @@ import injectReducer from '../../utils/injectReducer';
 import reducer from './reducer';
 import ProductItem from '../ProductItem';
 import ProductList from '../ProductList';
+import { actDeleteProductReq, actFetchProductReq, loadingReq } from './actions';
 
 class Product extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            products: [],
-        }
-    }
-    showProducts(products) {
-        let result = null;
-        if (products) {
-            result = products.map((product, index) => {
-                return (
-                    <ProductItem
-                        key={index}
-                        product={product}
-                        index={index}
-                        onDelete={this.onDelete}
-                    />
-                )
-            })
-        }
-        return result;
-    }
-
-    componentDidMount() {
-        CallAPI('products', 'GET', null).then(({ data }) => {
-            this.setState({
-                products: data,
-            })
-        })
-    }
-
-    onDelete = id => {
-        const { products } = this.state;
-        const index = findIndex(products, ({ id: idProduct }) => id === idProduct )
-        CallAPI(`products/${id}`, 'DELETE', null).then(({ status }) => {
-            console.log(status);
-            if (status === 200) {
-                products.splice(index, 1);
-                this.setState({
-                    products,
-                })
-            }
-        })
-    }
-
-    render() {
-        const { products } = this.state;
-        console.log(products);
-
+  showProducts(products) {
+    let result = null;
+    if (products) {
+      result = products.map((product, index) => {
         return (
-            <div className="flex flex-col w-[1000px] m-auto">
-                <div className="overflow-x-auto sm:-mx-6 lg:-mx-8">
-                    <div className="py-4 inline-block min-w-full sm:px-6 lg:px-8">
-                        <div className="overflow-hidden">
-                            <Link to="/product/add">
-                                <button type="button" className="btn-product">
-                                    Add Product
-                                </button>
-                            </Link>
-                            <ProductList>
-                                {this.showProducts(products)}
-                            </ProductList>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        )
+          <ProductItem
+            key={index}
+            product={product}
+            index={index}
+            onDelete={this.onDelete}
+          />
+        );
+      });
     }
+    return result;
+  }
+
+  componentDidMount() {
+    this.props.fetchAllProduct();
+  }
+
+  onDelete = id => {
+    this.props.deleteProduct(id);
+  };
+
+  render() {
+    const { products } = this.props;
+    const elementProduct = this.showProducts(products);
+
+    return (
+      <>
+        <div className="flex flex-col w-[1000px] m-auto">
+          <div className="overflow-x-auto sm:-mx-6 lg:-mx-8">
+            <div className="py-4 inline-block min-w-full sm:px-6 lg:px-8">
+              <div className="overflow-hidden">
+                <Link to="/product/add">
+                  <button type="button" className="btn-product">
+                    Add Product
+                  </button>
+                </Link>
+                <ProductList>
+                  {elementProduct}
+                </ProductList>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 }
+
 const mapStateToProps = state => {
-    const { product } = state;
-    return {
-        product,
-    };
+  const { products } = state;
+  return {
+    products,
+  };
 };
 
-const withConnect = connect(mapStateToProps, null);
-const withReducer = injectReducer({ key: 'product', reducer });
+const mapDispatchToProps = dispatch => {
+  return {
+    fetchAllProduct: () => dispatch(actFetchProductReq()),
+    deleteProduct: id => dispatch(actDeleteProductReq(id)),
+  };
+};
+
+const withConnect = connect(mapStateToProps, mapDispatchToProps);
+const withReducer = injectReducer({ key: 'products', reducer });
 
 export default compose(withReducer, withConnect)(Product);
